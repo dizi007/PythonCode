@@ -1,0 +1,123 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Tue May 12 16:47:53 2020
+
+@author: lindi
+1.什么是xlrd模块？
+
+python操作excel主要用到xlrd和xlwt这两个库，即xlrd是读excel，xlwt是写excel的库。
+
+先来说一下基础环境配置
+
+安装xlrd/xlwt模块
+
+前提是已经安装了python 环境。
+
+之后在cmd窗口  
+pip install  xlrd
+pip install  xlwt
+
+"""
+
+"""
+本函数解决将两个表格，通过外键（如用户ID等），链接成同一个表格的问题
+
+正常运行的前提条件：
+1、被作为外键的字段建议在Excel内先处理成文本类型，方便后续匹配
+PS：批量转化文本方法见https://jingyan.baidu.com/article/9faa7231e4928c473c28cb93.html
+2、作为外键的字段需要放置在第0列
+
+使用说明：将需要处理的文件，放到跟本文件同样的目录下，修改对应的文件名和对应的表格名称，之后点击运行即可
+如果想要输出的文件也带表头，记得将第0列的表头修改成一样即可
+
+参数说明：
+excel1_path：做为基准的文件地址(扩展名为xlxs)
+sheet1name：excel1文件内的sheet的名称
+excel2_path：需要被拼接的文件地址(扩展名为xlxs)
+sheet2name：excel2文件内的sheet的名称
+outexcel_path：输出的文件地址(扩展名为xls)
+测试文件：excelexp1.xlsx和excelexp2.xlsx
+
+"""
+
+import xlrd
+import xlwt
+
+
+def linkExcel(excel1_path,sheet1name,excel2_path,sheet2name,outexcel_path):
+    
+    ExcelFile1 = xlrd.open_workbook(excel1_path)
+    ExcelFile2 = xlrd.open_workbook(excel2_path)
+    
+    #打开对应名称的表格，本次例子放在同一个文件中
+    sheet1 = ExcelFile1.sheet_by_name(sheet1name)
+    sheet2 = ExcelFile2.sheet_by_name(sheet2name)
+    
+    #创建空列表
+    
+    list_sheet1 = []
+    list_sheet2 = []
+    
+    #读取Excel中的每一行数据，存入一个二维list
+    for i in range(sheet1.nrows):
+        list_sheet1.append(sheet1.row_values(i))
+    
+    for i in range(sheet2.nrows):
+        list_sheet2.append(sheet2.row_values(i))
+    
+    #print(list_sheet2)
+    #print(list_sheet1[1][:] + list_sheet2[1][1:])
+    #将两个数据按照其中的第0列字段匹配拼接
+    list_sheetend = []
+    
+    #以sheet1为参照，查找sheet2中的数据，如果匹配则拼接
+    
+    for i in range(sheet1.nrows):
+        for j in range(sheet2.nrows):
+            if(list_sheet1[i][0] == list_sheet2[j][0]):
+                #将sheet1的第i行和sheet2的第j行拼接，因为本例子中sheet2的外键在第0列，因此sheet2拼接内容为[1:]
+                list_sheetend.append(list_sheet1[i][:] + list_sheet2[j][1:])
+    
+    
+    #print(list_sheetend)
+    
+    
+    
+    #生成一个新的xls文件
+    
+    #新建一个excel文件
+    workbook = xlwt.Workbook(encoding = 'utf-8')
+    sheettest = workbook.add_sheet("output", cell_overwrite_ok=True)
+    #写入某一个单元格
+    #sheettest.write(0,0,u"中国")
+    
+    #写入拼接后的数据
+    for i in range(len(list_sheetend[:])):
+        for j in range(len(list_sheetend[i][:])):
+            sheettest.write(i,j,list_sheetend[i][j])
+    
+    #设置格式
+    style=xlwt.XFStyle()
+    ft=xlwt.Font()
+    ft.name="Times New Roman"
+    ft.bold=True
+    style.font=ft
+    
+    #保存文件，一定注意，会强制覆盖原文件！！！
+    workbook.save(outexcel_path)
+
+
+#使用链接函数
+linkExcel('excelexp1.xlsx','Sheet1','excelexp2.xlsx','Sheet2','test.xls' )
+
+
+
+
+
+
+
+
+
+
+
+
